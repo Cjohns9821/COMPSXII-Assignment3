@@ -1,205 +1,130 @@
-/*
- * Object Simulator Assignment
- * Computer Science XII - Computer Systems
- * 
- * This program simulates object-oriented programming using structs and
- * function pointers to understand how Python's class system works at the
- * implementation level.
- * 
- * You'll build an RPG character system with inheritance and polymorphism.
- */
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-// =============================================================================
-// PART 1: BASE CHARACTER STRUCT
-// =============================================================================
-// Define the base Character "class" that other character types will inherit from.
-// This struct contains data fields and function pointers (simulating methods).
+/* Forward declaration */
+typedef struct Character Character;
 
-// TODO: Define the Character struct with the following members:
-// - char name[50]: character's name
-// - int health: current health points
-// - int level: character level
-// - Function pointer: void (*attack)(struct Character* self)
-// - Function pointer: void (*take_damage)(struct Character* self, int damage)
-//
-// Hint: Function pointers are declared as: return_type (*pointer_name)(parameters)
-// Use 'struct Character*' for self parameter since the struct isn't fully defined yet
+/* ============================================================
+   PART 1 — BASE CHARACTER STRUCT
+   ============================================================ */
 
-typedef struct Character {
-    // TODO: Add data members here
-    
-    
-    
-    
-    // TODO: Add function pointer members here
-    
-    
-} Character;
+struct Character {
+    char name[50];
+    int health;
+    int level;
 
-// =============================================================================
-// PART 2: CHARACTER METHODS
-// =============================================================================
-// Implement the actual functions that Character structs will point to.
-// These simulate "methods" in Python classes.
+    void (*attack)(Character *self);
+    void (*take_damage)(Character *self, int dmg);
+};
 
-// TODO: Implement character_attack function
-// This function should:
-// - Accept a Character* pointer (the "self" parameter)
-// - Print: "[name] performs a basic attack!"
-// Hint: void character_attack(Character* self) { ... }
+/* ============================================================
+   PART 2 — BASE CHARACTER METHODS
+   ============================================================ */
 
+void character_attack(Character *self) {
+    printf("%s performs a basic attack!\n", self->name);
+}
 
+void character_take_damage(Character *self, int dmg) {
+    self->health -= dmg;
+    if (self->health < 0) self->health = 0;
 
+    printf("%s takes %d damage! Health now %d\n",
+           self->name, dmg, self->health);
+}
 
-// TODO: Implement character_take_damage function
-// This function should:
-// - Accept a Character* pointer and an int damage
-// - Reduce the character's health by the damage amount
-// - Print: "[name] takes [damage] damage! Health: [remaining health]"
+Character create_character(const char *name, int health, int level) {
+    Character c;
 
+    strncpy(c.name, name, sizeof(c.name));
+    c.name[sizeof(c.name) - 1] = '\0';
 
+    c.health = health;
+    c.level = level;
 
+    c.attack = character_attack;
+    c.take_damage = character_take_damage;
 
-// TODO: Implement character_init function (constructor)
-// This function should:
-// - Accept a Character* pointer, name string, health, and level
-// - Copy the name into the struct using strncpy
-// - Set health and level
-// - Initialize attack function pointer to character_attack
-// - Initialize take_damage function pointer to character_take_damage
-// Hint: strncpy(dest, src, size) and remember to null-terminate
+    return c;
+}
 
-
-
-
-
-
-// =============================================================================
-// PART 3: DERIVED CHARACTER TYPES
-// =============================================================================
-// Create specialized Warrior and Mage types that "inherit" from Character
-// using composition (embedding the base struct as the first member).
-
-// TODO: Define the Warrior struct
-// This should contain:
-// - Character base: the base Character struct as the FIRST member
-// - int strength: warrior-specific attribute
-// Hint: Having Character as the first member allows casting between types
+/* ============================================================
+   PART 3 — DERIVED TYPES (Warrior, Mage)
+   ============================================================ */
 
 typedef struct Warrior {
-    // TODO: Add Character base as first member
-    
-    
-    // TODO: Add Warrior-specific data
-    
+    Character base;   // inheritance via composition
+    int strength;
 } Warrior;
 
-// TODO: Define the Mage struct
-// This should contain:
-// - Character base: the base Character struct as the FIRST member
-// - int mana: mage-specific attribute
-
 typedef struct Mage {
-    // TODO: Add Character base as first member
-    
-    
-    // TODO: Add Mage-specific data
-    
+    Character base;
+    int mana;
 } Mage;
 
-// =============================================================================
-// PART 4: POLYMORPHIC METHODS
-// =============================================================================
-// Implement specialized attack methods that override the base Character attack.
-// This demonstrates polymorphism - same function call, different behavior.
+/* ============================================================
+   PART 4 — POLYMORPHIC METHODS
+   ============================================================ */
 
-// TODO: Implement warrior_attack function
-// This function should:
-// - Accept a Character* pointer (note: NOT Warrior*, we'll cast it)
-// - Cast the Character* to Warrior* to access warrior-specific data
-// - Print: "[name] swings sword with [strength] strength!"
-// Hint: Warrior* w = (Warrior*)self;
+void warrior_attack(Character *self) {
+    Warrior *w = (Warrior *)self;  // safe cast because base is first member
+    printf("%s swings a sword for heavy damage! (Strength: %d)\n",
+           w->base.name, w->strength);
+}
 
+void mage_attack(Character *self) {
+    Mage *m = (Mage *)self;
+    printf("%s casts a fireball! (Mana: %d)\n",
+           m->base.name, m->mana);
+}
 
+Warrior create_warrior(const char *name, int health, int level, int strength) {
+    Warrior w;
+    w.base = create_character(name, health, level);
+    w.strength = strength;
 
+    w.base.attack = warrior_attack;          // override
+    w.base.take_damage = character_take_damage;
 
+    return w;
+}
 
-// TODO: Implement mage_attack function
-// This function should:
-// - Accept a Character* pointer
-// - Cast to Mage* to access mage-specific data
-// - Reduce mana by 10 (cost of spell)
-// - Print: "[name] casts fireball using [mana] mana!"
-// - If mana is below 10, print: "[name] is out of mana!"
+Mage create_mage(const char *name, int health, int level, int mana) {
+    Mage m;
+    m.base = create_character(name, health, level);
+    m.mana = mana;
 
+    m.base.attack = mage_attack;             // override
+    m.base.take_damage = character_take_damage;
 
+    return m;
+}
 
-
-
-// TODO: Implement warrior_init function (constructor)
-// This function should:
-// - Accept a Warrior* pointer, name, health, level, and strength
-// - Initialize the base Character part using character_init
-// - Set the strength field
-// - Override the attack function pointer to point to warrior_attack
-// Hint: To initialize base: character_init(&w->base, name, health, level);
-// Then override: w->base.attack = warrior_attack;
-
-
-
-
-
-
-
-// TODO: Implement mage_init function (constructor)
-// This function should:
-// - Accept a Mage* pointer, name, health, level, and mana
-// - Initialize the base Character part using character_init
-// - Set the mana field
-// - Override the attack function pointer to point to mage_attack
-
-
-
-
-
-
-
-// =============================================================================
-// MAIN FUNCTION
-// =============================================================================
+/* ============================================================
+   PART 5 — MAIN TESTING
+   ============================================================ */
 
 int main() {
-    printf("=============================================================\n");
-    printf("         OBJECT SIMULATOR: RPG Character System\n");
-    printf("=============================================================\n");
-    
-    // TODO: Create and test your character system here
-    // 1. Create a basic Character using character_init
-    // 2. Call its attack and take_damage methods
-    // 3. Create a Warrior using warrior_init
-    // 4. Call the Warrior's attack method (should use warrior_attack)
-    // 5. Create a Mage using mage_init
-    // 6. Call the Mage's attack method multiple times (to show mana usage)
-    // 7. Demonstrate polymorphism by storing different character types
-    //    in an array and calling attack on each
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    printf("\n=============================================================\n");
-    printf("Object simulation complete!\n");
-    printf("=============================================================\n");
-    
+
+    Character hero = create_character("Basic Hero", 80, 1);
+    Warrior thor = create_warrior("Thorin", 41, 5, 10);
+    Mage cloud = create_mage("Cloud", 23, 4, 30);
+
+    printf("=== Individual Attacks ===\n");
+    hero.attack(&hero);
+    thor.base.attack(&thor.base);
+    cloud.base.attack(&cloud.base);
+
+    printf("\n=== Polymorphism Demo ===\n");
+    Character *party[3] = { &hero, &thor.base, &cloud.base };
+
+    for (int i = 0; i < 3; i++) {
+        party[i]->attack(party[i]);  // same call, different behavior
+    }
+
+    printf("\n=== Damage Demo ===\n");
+    party[1]->take_damage(party[1], 15);
+    party[2]->take_damage(party[2], 22);
+
     return 0;
 }

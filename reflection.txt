@@ -1,0 +1,26 @@
+1. Working through this assignment made the differences between Python’s class system and C’s struct‑based approach feel much more concrete. 
+In Python, defining a class automatically bundles together data attributes and methods, and the interpreter handles all the behind‑the‑scenes work of binding self, performing method lookups, and managing inheritance. 
+Calling a method like hero.attack() feels simple, but under the hood Python is performing a dynamic lookup on the object’s type, retrieving the correct function, and binding the instance as the first argument.
+
+In C, none of that happens automatically. 
+I had to manually create a Character struct, define fields for data, and explicitly add function pointers to simulate methods. 
+Every function had to accept a Character *self argument, because C does not implicitly pass the object reference the way Python does. 
+I also had to manually assign each function pointer inside the constructor function. This made me realize how much Python hides from the programmer. 
+The convenience of Python’s syntax is built on top of the same ideas I implemented manually in C: structs holding data and pointers to behavior.
+
+2. Implementing inheritance in C required a very different mindset compared to Python’s simple class Warrior(Character): syntax. 
+Instead of declaring a subclass, I had to embed the base Character struct as the first member of the Warrior and Mage structs. 
+This composition‑based approach works because the base struct sits at the beginning of the derived struct’s memory layout, allowing a pointer to the base to be treated as a pointer to the whole derived object.
+
+Python handles inheritance automatically, building method resolution order, copying attributes, and allowing overrides with almost no effort from the programmer. 
+In C, I had to manually override function pointers in the constructor to simulate polymorphism. 
+Python’s inheritance system is far more readable and less error‑prone, but implementing it manually in C helped me understand what Python is doing behind the scenes.
+
+3. Function pointers inside structs are the key to achieving polymorphism in C. 
+Each object stores its own version of the attack function pointer, so calling party[i]->attack(party[i]) results in different behavior depending on which function pointer is stored. 
+This mirrors Python’s dynamic dispatch, where the interpreter selects the correct method implementation based on the object’s type.
+
+Systems programmers rely on these patterns because C is used in environments where performance, memory layout, and predictability matter more than language convenience. 
+Operating systems, game engines, embedded firmware, and high‑performance libraries often need object‑oriented organization without the overhead of a full OOP language. 
+Structs plus function pointers provide a flexible, lightweight way to model objects, inheritance, and polymorphism while keeping full control over memory and execution. 
+This assignment showcased how OOP concepts can exist even in languages that don’t support them directly.
